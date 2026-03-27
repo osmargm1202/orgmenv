@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "inkjs-design": {
+      "source": "akiojin/skills",
+      "sourceType": "github",
+      "computedHash": "6cea41cf9cf62f8ec857d506426524179ed8be11e897dc5cfb2290d38a079237"
+    }
+  }
+}

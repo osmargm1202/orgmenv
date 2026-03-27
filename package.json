@@ -1,0 +1,31 @@
+{
+  "name": "orgmenv",
+  "version": "1.0.0",
+  "description": "Proyecto para llevar los secretos, configuraciones de cada proyecto en base de datos local o publica.",
+  "keywords": [
+    "CLI",
+    "age",
+    "sops",
+    "cifrado",
+    ".env",
+    "env"
+  ],
+  "homepage": "https://github.com/osmargm1202/orgmenv#readme",
+  "bugs": {
+    "url": "https://github.com/osmargm1202/orgmenv/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/osmargm1202/orgmenv.git"
+  },
+  "license": "MIT",
+  "author": "osmar",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "npm run build && npm run start"
+  },
+  "dependencies": {
+    "inkjs": "^2.4.0"
+  }
+}
