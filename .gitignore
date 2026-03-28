@@ -1,2 +1,26 @@
 .env
-node_modules
+.env.*
+*.env
+
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local persistence and generated outputs
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.env.generated
+.orgmenv/
+
+# Local key material
+*.agekey
+*.age.txt
+keys/
+
+# Test/runtime temp artifacts
+tmp/
+.tmp/
+*.tmp
