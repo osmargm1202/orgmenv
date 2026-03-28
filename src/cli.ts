@@ -139,7 +139,7 @@ export function createProgram(): Command {
   program
     .name('orgmenv')
     .description('Local-first secret and env snapshot manager')
-    .version('1.0.0')
+    .version('1.1.0')
     .showHelpAfterError()
     .option('--project <id|name|alias>', 'target project')
     .option('--env <name>', 'target environment', 'dev')

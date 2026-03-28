@@ -3,7 +3,7 @@ import { render } from 'ink';
 import { closeRuntime, createRuntime, type GlobalCliOptions, type RuntimeServices } from './commands/runtime.js';
 import { InteractiveMenu } from './interactive/menu.js';
 
-const appVersion = process.env.npm_package_version ?? '1.0.0';
+const appVersion = process.env.npm_package_version ?? '1.1.0';
 
 interface AppProps {
   runtime: RuntimeServices;
@@ -15,7 +15,7 @@ function App({ runtime, options }: AppProps): React.JSX.Element {
 }
 
 export async function launchInteractiveApp(options: GlobalCliOptions): Promise<void> {
-  const runtime = createRuntime(options);
+  const runtime = createRuntime(options, { createDbIfMissing: false });
 
   try {
     const ink = render(<App runtime={runtime} options={options} />, {

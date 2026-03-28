@@ -49,13 +49,13 @@ describe('ui parity contracts', () => {
     const shellSource = fs.readFileSync(appShellPath, 'utf8');
 
     expect(menuSource).toContain('<AppShell appVersion={appVersion}>');
-    expect(shellSource).toContain('borderColor="magenta"');
+    expect(shellSource).toContain('PRIMARY_THEME_COLOR');
     expect(shellSource).toContain('minWidth={96}');
   });
 
-  it('option list uses pink selected color', () => {
+  it('option list uses centralized primary theme color for selection', () => {
     const source = fs.readFileSync(optionListPath, 'utf8');
 
-    expect(source).toContain("'magentaBright'");
+    expect(source).toContain('PRIMARY_THEME_COLOR');
   });
 });

@@ -9,20 +9,41 @@ import type { RuntimeServices } from '../../src/commands/runtime.js';
 
 const ORIGINAL_AGE_KEY_FILE = process.env.AGE_KEY_FILE;
 
-function createRuntimeStub(keyPath?: string): RuntimeServices {
-  return {
+function createRuntimeStub(options: { keyPath?: string; dbExists?: boolean; dbInitialized?: boolean } = {}): RuntimeServices {
+  const state = {
+    path: '/tmp/orgmenv-test.db',
+    exists: options.dbExists ?? true,
+    initialized: options.dbInitialized ?? true,
+    usingFallbackConnection: !(options.dbExists ?? true)
+  };
+
+  const runtime = {
     config: {
       dbPath: ':memory:',
       useEncryption: true,
-      keyPath
+      keyPath: options.keyPath
     },
+    dbState: state,
+    initDb: () => {
+      runtime.dbState = {
+        ...runtime.dbState,
+        exists: true,
+        initialized: true,
+        usingFallbackConnection: false
+      };
+
+      return runtime.dbState;
+    },
+    refreshDbState: () => runtime.dbState,
     encryption: {
       resolveKeySource: () => ({ source: 'none' as const })
     },
     diagnostics: {
       run: () => ({ allAvailable: true, tools: [] })
     }
-  } as unknown as RuntimeServices;
+  };
+
+  return runtime as unknown as RuntimeServices;
 }
 
 describe.sequential('ui: local config key management visibility', () => {
@@ -88,5 +109,81 @@ describe.sequential('ui: local config key management visibility', () => {
     expect(frame).toContain('Generate age key file');
 
     app.unmount();
+  });
+
+  it('shows Init DB action only when effective db path is missing', () => {
+    const missingDbApp = render(
+      <LocalConfigScreen
+        active={true}
+        runtime={createRuntimeStub({ dbExists: false, dbInitialized: false })}
+        options={{}}
+        environment="dev"
+        projectState={{ note: 'test' }}
+        onBack={vi.fn()}
+        onProjectStateChange={vi.fn()}
+      />
+    );
+
+    expect(missingDbApp.lastFrame()).toContain('Init DB (create file + run migrations)');
+    missingDbApp.unmount();
+
+    const existingDbApp = render(
+      <LocalConfigScreen
+        active={true}
+        runtime={createRuntimeStub({ dbExists: true, dbInitialized: true })}
+        options={{}}
+        environment="dev"
+        projectState={{ note: 'test' }}
+        onBack={vi.fn()}
+        onProjectStateChange={vi.fn()}
+      />
+    );
+
+    expect(existingDbApp.lastFrame()).not.toContain('Init DB (create file + run migrations)');
+    existingDbApp.unmount();
+  });
+
+  it('transitions from missing DB state to initialized state after init', () => {
+    const keyPath = path.join(tempDir, 'age.txt');
+    fs.writeFileSync(keyPath, 'AGE-SECRET-KEY-1VISIBLE');
+    process.env.AGE_KEY_FILE = keyPath;
+
+    const runtime = createRuntimeStub({ dbExists: false, dbInitialized: false });
+
+    const app = render(
+      <LocalConfigScreen
+        active={true}
+        runtime={runtime}
+        options={{}}
+        environment="dev"
+        projectState={{ note: 'test' }}
+        onBack={vi.fn()}
+        onProjectStateChange={vi.fn()}
+      />
+    );
+
+    expect(app.lastFrame()).toContain('Init DB (create file + run migrations)');
+
+    runtime.initDb();
+    app.unmount();
+
+    const refreshed = render(
+      <LocalConfigScreen
+        active={true}
+        runtime={runtime}
+        options={{}}
+        environment="dev"
+        projectState={{ note: 'test' }}
+        onBack={vi.fn()}
+        onProjectStateChange={vi.fn()}
+      />
+    );
+
+    const frame = refreshed.lastFrame() ?? '';
+    expect(frame).toContain('db exists: yes');
+    expect(frame).toContain('db initialized: yes');
+    expect(frame).not.toContain('Init DB (create file + run migrations)');
+
+    refreshed.unmount();
   });
 });

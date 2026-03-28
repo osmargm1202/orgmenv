@@ -3,6 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import type { EnvVersion } from '../../types/domain.js';
 import { InputStep } from '../components/common/InputStep.js';
 import { OptionList, type OptionItem } from '../components/common/OptionList.js';
+import { PRIMARY_THEME_COLOR } from '../theme.js';
 import type { InteractiveScreenProps } from '../types.js';
 import { resolveNumericSelection, updateTextInput } from '../utils/input.js';
 
@@ -160,7 +161,7 @@ export function HistoryRestoreScreen({
 
   return (
     <Box flexDirection="column">
-      <Text color="cyanBright" bold>
+      <Text color={PRIMARY_THEME_COLOR} bold>
         History & Restore
       </Text>
       <Text color="gray">↑/↓ move · Enter confirm · 1-3 quick select · b/esc back</Text>

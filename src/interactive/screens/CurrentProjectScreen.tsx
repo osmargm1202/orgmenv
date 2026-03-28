@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { InteractiveScreenProps } from '../types.js';
+import { PRIMARY_THEME_COLOR } from '../theme.js';
 
 interface CurrentProjectScreenProps extends InteractiveScreenProps {
   active: boolean;
@@ -31,7 +32,7 @@ export function CurrentProjectScreen({
 
   return (
     <Box flexDirection="column">
-      <Text color="cyanBright" bold>
+      <Text color={PRIMARY_THEME_COLOR} bold>
         Current project
       </Text>
       <Text color="gray">r refresh · b/esc back</Text>

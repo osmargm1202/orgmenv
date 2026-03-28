@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+import { PRIMARY_THEME_COLOR } from '../../theme.js';
 
 interface InputStepProps {
   title: string;
@@ -19,7 +20,7 @@ export function InputStep({ title, label, value, defaultValue, hint, status }: I
 
   return (
     <Box flexDirection="column">
-      <Text color="cyanBright" bold>
+      <Text color={PRIMARY_THEME_COLOR} bold>
         {title}
       </Text>
       <Text color="gray">Enter confirm · Esc cancel</Text>
@@ -29,7 +30,7 @@ export function InputStep({ title, label, value, defaultValue, hint, status }: I
         <Text color="gray">INPUT</Text>
         <Text>{label}</Text>
         <Text color="gray">default: {renderDisplayValue(defaultValue)}</Text>
-        <Text color="magentaBright">{value}█</Text>
+        <Text color={PRIMARY_THEME_COLOR}>{value}█</Text>
       </Box>
 
       {hint ? (

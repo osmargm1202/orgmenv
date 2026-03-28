@@ -1,6 +1,6 @@
 {
   "name": "orgmenv",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Proyecto para llevar los secretos, configuraciones de cada proyecto en base de datos local o publica.",
   "keywords": [
     "CLI",

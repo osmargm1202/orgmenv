@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { OptionList, type OptionItem } from '../components/common/OptionList.js';
 import type { InteractiveScreenProps } from '../types.js';
+import { PRIMARY_THEME_COLOR } from '../theme.js';
 import { resolveNumericSelection } from '../utils/input.js';
 
 type Stage = 'destination' | 'select-files' | 'render-output';
@@ -225,7 +226,7 @@ export function GenerateEnvScreen({
 
   return (
     <Box flexDirection="column">
-      <Text color="cyanBright" bold>
+      <Text color={PRIMARY_THEME_COLOR} bold>
         Generate files
       </Text>
       <Text color="gray">Keyboard first · Space select · Enter generate · b/esc back</Text>
@@ -247,7 +248,7 @@ export function GenerateEnvScreen({
           {fileActions.map((item, index) => {
             const selected = index === fileSelectedIndex;
             return (
-              <Text key={item.id} color={selected ? 'magentaBright' : 'gray'} bold={selected}>
+              <Text key={item.id} color={selected ? PRIMARY_THEME_COLOR : 'gray'} bold={selected}>
                 {selected ? '>' : ' '} {index + 1}. {renderFileActionLabel(item)}
               </Text>
             );

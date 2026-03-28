@@ -5,6 +5,7 @@ import { Box, Text, useInput } from 'ink';
 import { getGitSignals } from '../../utils/git.js';
 import { InputStep } from '../components/common/InputStep.js';
 import { OptionList, type OptionItem } from '../components/common/OptionList.js';
+import { PRIMARY_THEME_COLOR } from '../theme.js';
 import type { InteractiveScreenProps } from '../types.js';
 import { resolveNumericSelection, updateTextInput } from '../utils/input.js';
 
@@ -333,7 +334,7 @@ export function RegisterProjectScreen({
 
   return (
     <Box flexDirection="column">
-      <Text color="cyanBright" bold>
+      <Text color={PRIMARY_THEME_COLOR} bold>
         Register project
       </Text>
       <Text color="gray">{`↑/↓ move · Enter confirm · 1-${actions.length} quick select · b/esc back`}</Text>

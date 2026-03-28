@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+import { PRIMARY_THEME_COLOR } from '../../theme.js';
 
 export interface OptionItem {
   id: string;
@@ -12,9 +13,9 @@ interface OptionListProps {
   selectedIndex: number;
 }
 
-function getOptionColor(item: OptionItem, selected: boolean): 'magentaBright' | 'yellowBright' | 'redBright' | 'gray' {
+function getOptionColor(item: OptionItem, selected: boolean): 'yellowBright' | 'redBright' | 'gray' {
   if (selected) {
-    return 'magentaBright';
+    return PRIMARY_THEME_COLOR;
   }
 
   if (item.tone === 'danger') {

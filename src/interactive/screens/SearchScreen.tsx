@@ -3,6 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import type { ScopeTaggedVariable } from '../../types/domain.js';
 import { InputStep } from '../components/common/InputStep.js';
 import type { InteractiveScreenProps } from '../types.js';
+import { PRIMARY_THEME_COLOR } from '../theme.js';
 import { updateTextInput } from '../utils/input.js';
 
 interface SearchScreenProps extends InteractiveScreenProps {
@@ -132,7 +133,7 @@ export function SearchScreen({ active, runtime, onBack }: SearchScreenProps): Re
 
   return (
     <Box flexDirection="column">
-      <Text color="cyanBright" bold>
+      <Text color={PRIMARY_THEME_COLOR} bold>
         Search
       </Text>
       <Text color="gray">
@@ -152,7 +153,7 @@ export function SearchScreen({ active, runtime, onBack }: SearchScreenProps): Re
           {results.slice(0, 20).map((entry, index) => {
             const selected = index === selectedResultIndex;
             return (
-              <Text key={`${entry.scope}-${entry.key}-${index}`} color={selected ? 'magentaBright' : undefined} bold={selected}>
+              <Text key={`${entry.scope}-${entry.key}-${index}`} color={selected ? PRIMARY_THEME_COLOR : undefined} bold={selected}>
                 {selected ? '>' : ' '} [{entry.scope}] {entry.key} · alias={entry.alias ?? '-'} · env={entry.environment ?? '-'} · preview={entry.valuePreview}
               </Text>
             );
@@ -167,7 +168,7 @@ export function SearchScreen({ active, runtime, onBack }: SearchScreenProps): Re
             scope: [{selectedResult.scope}] · alias={selectedResult.alias ?? '-'} · env={selectedResult.environment ?? '-'}
           </Text>
           <Text>
-            key: <Text color="cyanBright">{selectedResult.key}</Text>
+            key: <Text color={PRIMARY_THEME_COLOR}>{selectedResult.key}</Text>
           </Text>
           <Text>
             value: <Text color="greenBright">{selectedResult.value}</Text>

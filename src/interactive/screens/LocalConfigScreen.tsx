@@ -6,6 +6,7 @@ import { resolveEffectiveKeyState } from '../../services/keyManagement.js';
 import { resolveOrgmenvPaths } from '../../utils/paths.js';
 import { InputStep } from '../components/common/InputStep.js';
 import { OptionList, type OptionItem } from '../components/common/OptionList.js';
+import { PRIMARY_THEME_COLOR } from '../theme.js';
 import type { InteractiveScreenProps } from '../types.js';
 import { resolveNumericSelection, updateTextInput } from '../utils/input.js';
 
@@ -17,6 +18,7 @@ type PromptMode = 'none' | 'set-key-path' | 'generate-key-file';
 
 type MenuAction =
   | 'toggle-encryption'
+  | 'init-db'
   | 'set-key-path'
   | 'clear-key-path'
   | 'generate-key-file'
@@ -48,6 +50,15 @@ export function LocalConfigScreen({ active, runtime, onBack }: LocalConfigScreen
           tone: 'warning'
         }
       ];
+
+      if (!runtime.dbState.exists) {
+        baseItems.push({
+          id: 'init-db',
+          action: 'init-db',
+          label: 'Init DB (create file + run migrations)',
+          tone: 'safe'
+        });
+      }
 
       if (shouldShowKeyManagement) {
         baseItems.push(
@@ -89,7 +100,7 @@ export function LocalConfigScreen({ active, runtime, onBack }: LocalConfigScreen
 
       return baseItems;
     },
-    [runtime.config.keyPath, runtime.config.useEncryption, shouldShowKeyManagement]
+    [runtime.config.keyPath, runtime.config.useEncryption, runtime.dbState.exists, shouldShowKeyManagement]
   );
 
   const keySource = runtime.encryption.resolveKeySource();
@@ -124,6 +135,20 @@ export function LocalConfigScreen({ active, runtime, onBack }: LocalConfigScreen
         beginPrompt('set-key-path', runtime.config.keyPath ?? '');
         return;
 
+      case 'init-db': {
+        const before = runtime.dbState;
+        const nextState = runtime.initDb();
+
+        if (!before.exists && nextState.exists && nextState.initialized) {
+          setStatus(`database initialized at ${nextState.path}`);
+        } else if (nextState.initialized) {
+          setStatus(`database already initialized at ${nextState.path}`);
+        } else {
+          setStatus(`warning: database still not initialized at ${nextState.path}`);
+        }
+        return;
+      }
+
       case 'clear-key-path':
         runtime.config.keyPath = undefined;
         setStatus('fallback key path cleared');
@@ -134,6 +159,7 @@ export function LocalConfigScreen({ active, runtime, onBack }: LocalConfigScreen
         return;
 
       case 'refresh-diagnostics':
+        runtime.refreshDbState();
         setStatus('diagnostics refreshed');
         return;
 
@@ -246,7 +272,7 @@ export function LocalConfigScreen({ active, runtime, onBack }: LocalConfigScreen
 
   return (
     <Box flexDirection="column">
-      <Text color="cyanBright" bold>
+      <Text color={PRIMARY_THEME_COLOR} bold>
         Configuration menu
       </Text>
       <Text color="gray">{`↑/↓ move · Enter confirm · 1-${menuItems.length} quick select · b/esc back`}</Text>
@@ -258,6 +284,9 @@ export function LocalConfigScreen({ active, runtime, onBack }: LocalConfigScreen
       <Box marginTop={1} flexDirection="column">
         <Text color="gray">CURRENT CONFIGURATION</Text>
         <Text>db path: {runtime.config.dbPath}</Text>
+        <Text>db exists: {runtime.dbState.exists ? 'yes' : 'no'}</Text>
+        <Text>db initialized: {runtime.dbState.initialized ? 'yes' : 'no'}</Text>
+        <Text>db connection: {runtime.dbState.usingFallbackConnection ? 'fallback (:memory:)' : 'configured path'}</Text>
         <Text>encryption: {runtime.config.useEncryption ? 'enabled' : 'disabled (plaintext warning)'}</Text>
         <Text>AGE_KEY_FILE env: {ageKeyEnv ? `defined (${ageKeyEnv})` : 'not defined'}</Text>
         <Text>fallback key path: {runtime.config.keyPath?.trim() || 'not set'}</Text>

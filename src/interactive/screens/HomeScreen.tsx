@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { ScreenId } from '../types.js';
+import { PRIMARY_THEME_COLOR } from '../theme.js';
 
 interface Action {
   key: string;
@@ -36,9 +37,9 @@ export function HomeScreen({ active, onNavigate, onExit }: HomeScreenProps): Rea
   );
   const totalItems = ACTIONS.length;
 
-  const getActionColor = (action: Action, selected: boolean): 'magentaBright' | 'redBright' | 'gray' => {
+  const getActionColor = (action: Action, selected: boolean): 'yellowBright' | 'redBright' | 'gray' => {
     if (selected) {
-      return 'magentaBright';
+      return PRIMARY_THEME_COLOR;
     }
 
     return action.tone === 'danger' ? 'redBright' : 'gray';

@@ -1,5 +1,6 @@
 import process from 'node:process';
 import { createInterface } from 'node:readline/promises';
+import fs from 'node:fs';
 import type Database from 'better-sqlite3';
 import type { Command } from 'commander';
 import { createConnection } from '../db/connection.js';
@@ -22,6 +23,7 @@ import { ProjectResolverService } from '../services/projectResolver.js';
 import { ToolingDiagnosticsService } from '../services/toolingDiagnostics.js';
 import { VariableService } from '../services/variableService.js';
 import { VersioningService } from '../services/versioning.js';
+import { MIGRATIONS } from '../db/schema.js';
 
 export interface GlobalCliOptions {
   project?: string;
@@ -35,6 +37,7 @@ export interface GlobalCliOptions {
 export interface RuntimeServices {
   db: Database.Database;
   config: OrgmenvConfig;
+  dbState: DbRuntimeState;
   projectRepo: ProjectRepo;
   environmentRepo: EnvironmentRepo;
   versionRepo: VersionRepo;
@@ -49,6 +52,19 @@ export interface RuntimeServices {
   envGenerator: EnvGeneratorService;
   globalVariableService: GlobalVariableService;
   importedArtifactService: ImportedArtifactService;
+  initDb: () => DbRuntimeState;
+  refreshDbState: () => DbRuntimeState;
+}
+
+export interface DbRuntimeState {
+  path: string;
+  exists: boolean;
+  initialized: boolean;
+  usingFallbackConnection: boolean;
+}
+
+export interface CreateRuntimeOptions {
+  createDbIfMissing?: boolean;
 }
 
 export function getGlobalOptions(command: Command): GlobalCliOptions {
@@ -63,17 +79,35 @@ export function getGlobalOptions(command: Command): GlobalCliOptions {
   };
 }
 
-export function createRuntime(options: GlobalCliOptions): RuntimeServices {
-  const defaultPaths = resolveOrgmenvPaths();
-  const config: OrgmenvConfig = {
-    dbPath: options.dbPath?.trim() || defaultPaths.dbPath,
-    useEncryption: options.encryption !== false,
-    keyPath: options.keyPath?.trim() || undefined
-  };
+function isInMemoryDbPath(dbPath: string): boolean {
+  return dbPath.trim() === ':memory:';
+}
 
-  const db = createConnection({ dbPath: config.dbPath });
-  runMigrations(db);
+function dbFileExists(dbPath: string): boolean {
+  if (isInMemoryDbPath(dbPath)) {
+    return true;
+  }
 
+  return fs.existsSync(dbPath);
+}
+
+function isDbInitialized(db: Database.Database): boolean {
+  const schemaMigrationsTable = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations' LIMIT 1")
+    .get() as { name: string } | undefined;
+
+  if (!schemaMigrationsTable) {
+    return false;
+  }
+
+  const row = db
+    .prepare('SELECT COUNT(*) AS count FROM schema_migrations')
+    .get() as { count: number };
+
+  return row.count >= MIGRATIONS.length;
+}
+
+function createRuntimeBindings(db: Database.Database, config: OrgmenvConfig) {
   const projectRepo = new ProjectRepo(db);
   const environmentRepo = new EnvironmentRepo(db);
   const versionRepo = new VersionRepo(db);
@@ -91,8 +125,6 @@ export function createRuntime(options: GlobalCliOptions): RuntimeServices {
   const importedArtifactService = new ImportedArtifactService(environmentRepo, importedArtifactRepo, encryption);
 
   return {
-    db,
-    config,
     projectRepo,
     environmentRepo,
     versionRepo,
@@ -108,6 +140,89 @@ export function createRuntime(options: GlobalCliOptions): RuntimeServices {
     globalVariableService,
     importedArtifactService
   };
+}
+
+function assignBindings(runtime: RuntimeServices, bindings: ReturnType<typeof createRuntimeBindings>): void {
+  runtime.projectRepo = bindings.projectRepo;
+  runtime.environmentRepo = bindings.environmentRepo;
+  runtime.versionRepo = bindings.versionRepo;
+  runtime.variableRepo = bindings.variableRepo;
+  runtime.globalVariableRepo = bindings.globalVariableRepo;
+  runtime.importedArtifactRepo = bindings.importedArtifactRepo;
+  runtime.resolver = bindings.resolver;
+  runtime.versioning = bindings.versioning;
+  runtime.encryption = bindings.encryption;
+  runtime.diagnostics = bindings.diagnostics;
+  runtime.variableService = bindings.variableService;
+  runtime.envGenerator = bindings.envGenerator;
+  runtime.globalVariableService = bindings.globalVariableService;
+  runtime.importedArtifactService = bindings.importedArtifactService;
+}
+
+export function createRuntime(options: GlobalCliOptions, runtimeOptions: CreateRuntimeOptions = {}): RuntimeServices {
+  const defaultPaths = resolveOrgmenvPaths();
+  const createDbIfMissing = runtimeOptions.createDbIfMissing !== false;
+  const config: OrgmenvConfig = {
+    dbPath: options.dbPath?.trim() || defaultPaths.dbPath,
+    useEncryption: options.encryption !== false,
+    keyPath: options.keyPath?.trim() || undefined
+  };
+
+  const existsAtEffectivePath = dbFileExists(config.dbPath);
+  const usingFallbackConnection = !createDbIfMissing && !existsAtEffectivePath && !isInMemoryDbPath(config.dbPath);
+
+  const db = createConnection({ dbPath: usingFallbackConnection ? ':memory:' : config.dbPath });
+
+  if (!usingFallbackConnection) {
+    runMigrations(db);
+  }
+
+  let runtime!: RuntimeServices;
+
+  runtime = {
+    db,
+    config,
+    dbState: {
+      path: config.dbPath,
+      exists: usingFallbackConnection ? false : dbFileExists(config.dbPath),
+      initialized: usingFallbackConnection ? false : isDbInitialized(db),
+      usingFallbackConnection
+    },
+    ...createRuntimeBindings(db, config),
+    initDb: () => {
+      if (!runtime.dbState.usingFallbackConnection && runtime.dbState.initialized) {
+        return runtime.dbState;
+      }
+
+      if (runtime.dbState.usingFallbackConnection) {
+        const nextDb = createConnection({ dbPath: runtime.config.dbPath });
+        runMigrations(nextDb);
+        runtime.db.close();
+        runtime.db = nextDb;
+        assignBindings(runtime, createRuntimeBindings(nextDb, runtime.config));
+      } else {
+        runMigrations(runtime.db);
+      }
+
+      runtime.refreshDbState();
+      return runtime.dbState;
+    },
+    refreshDbState: () => {
+      const initialized = runtime.dbState.usingFallbackConnection ? false : isDbInitialized(runtime.db);
+      const exists = runtime.dbState.usingFallbackConnection ? false : dbFileExists(runtime.config.dbPath);
+
+      runtime.dbState = {
+        path: runtime.config.dbPath,
+        exists,
+        initialized,
+        usingFallbackConnection: runtime.dbState.usingFallbackConnection && !(exists && initialized)
+      };
+
+      return runtime.dbState;
+    }
+  };
+
+  return runtime;
 }
 
 function tryResolveExplicit(value: string, services: RuntimeServices, cwd: string, nonInteractive: boolean) {

@@ -21,6 +21,12 @@ interface InteractiveMenuProps {
 }
 
 function resolveProjectState(runtime: RuntimeServices, options: GlobalCliOptions): ProjectResolutionState {
+  if (!runtime.dbState.initialized) {
+    return {
+      note: 'database not initialized. Open Configuration menu (option 7) and run Init DB.'
+    };
+  }
+
   const cwd = process.cwd();
   const explicit = options.project?.trim();
 

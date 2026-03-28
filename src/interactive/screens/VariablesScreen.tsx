@@ -4,6 +4,7 @@ import { parseEnvInput } from '../../commands/import.js';
 import type { EnvVariable } from '../../types/domain.js';
 import { InputStep } from '../components/common/InputStep.js';
 import { OptionList, type OptionItem } from '../components/common/OptionList.js';
+import { PRIMARY_THEME_COLOR } from '../theme.js';
 import type { InteractiveScreenProps } from '../types.js';
 import { resolveNumericSelection, updateTextInput } from '../utils/input.js';
 import { SUPPORTED_ARTIFACT_FILE_TYPES } from '../../services/importedArtifactService.js';
@@ -326,7 +327,7 @@ export function VariablesScreen({
 
   return (
     <Box flexDirection="column">
-      <Text color="cyanBright" bold>
+      <Text color={PRIMARY_THEME_COLOR} bold>
         Variables
       </Text>
       <Text color="gray">↑/↓ move · Enter confirm · 1-7 quick select · b/esc back</Text>
