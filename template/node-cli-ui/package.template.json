@@ -1,0 +1,30 @@
+{
+  "name": "__APP_BIN_NAME__",
+  "version": "0.1.0",
+  "description": "__APP_DESCRIPTION__",
+  "type": "module",
+  "main": "dist/src/cli.js",
+  "bin": {
+    "__APP_BIN_NAME__": "./dist/src/cli.js"
+  },
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.json && node -e \"require('node:fs').chmodSync('dist/src/cli.js', 0o755)\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "commander": "^13.1.0",
+    "ink": "^5.1.0",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "@types/react": "^18.3.21",
+    "ink-testing-library": "^3.0.0",
+    "typescript": "^5.8.3",
+    "vitest": "^2.1.9"
+  }
+}
