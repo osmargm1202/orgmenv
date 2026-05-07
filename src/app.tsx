@@ -3,7 +3,7 @@ import { render } from 'ink';
 import { closeRuntime, createRuntime, type GlobalCliOptions, type RuntimeServices } from './commands/runtime.js';
 import { InteractiveMenu } from './interactive/menu.js';
 
-const appVersion = process.env.npm_package_version ?? '1.1.0';
+const appVersion = process.env.npm_package_version ?? '1.2.0';
 
 interface AppProps {
   runtime: RuntimeServices;
