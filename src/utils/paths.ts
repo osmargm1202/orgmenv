@@ -23,10 +23,44 @@ export function resolveOrgmenvPaths(): OrgmenvPaths {
   };
 }
 
+function getErrorCode(error: unknown): string | undefined {
+  return typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as NodeJS.ErrnoException).code)
+    : undefined;
+}
+
+export function removeBrokenSymlink(targetPath: string): void {
+  try {
+    const stats = fs.lstatSync(targetPath);
+    if (!stats.isSymbolicLink()) {
+      return;
+    }
+
+    try {
+      fs.statSync(targetPath);
+    } catch (error) {
+      if (getErrorCode(error) === 'ENOENT') {
+        fs.unlinkSync(targetPath);
+      } else {
+        throw error;
+      }
+    }
+  } catch (error) {
+    if (getErrorCode(error) !== 'ENOENT') {
+      throw error;
+    }
+  }
+}
+
+export function ensureDirectory(dirPath: string): void {
+  removeBrokenSymlink(dirPath);
+  fs.mkdirSync(dirPath, { recursive: true, mode: 0o700 });
+}
+
 export function ensureOrgmenvDirs(paths: OrgmenvPaths = resolveOrgmenvPaths()): OrgmenvPaths {
-  fs.mkdirSync(paths.configDir, { recursive: true, mode: 0o700 });
-  fs.mkdirSync(paths.backupsDir, { recursive: true, mode: 0o700 });
-  fs.mkdirSync(paths.cacheDir, { recursive: true, mode: 0o700 });
+  ensureDirectory(paths.configDir);
+  ensureDirectory(paths.backupsDir);
+  ensureDirectory(paths.cacheDir);
 
   return paths;
 }
